@@ -23,7 +23,7 @@ func main() {
 	buf := make([]byte, 1024*64)
 	rand.Read(buf)
 
-	st := time.Now().UnixMilli()
+	st := time.Now().UnixMicro()
 	for i := 0; i < iteration; i++ {
 		if _, err := f.Write(buf); err != nil {
 			panic(err)
@@ -32,10 +32,10 @@ func main() {
 			panic(err)
 		}
 	}
-	total := time.Now().UnixMilli() - st
+	total := time.Now().UnixMicro() - st
 	// yes, latency might be 0 here on a fast disk, you end up with a div by 0
 	// crash, good luck for that
 	latency := total / iteration
-	ops := 1000 / latency
-	fmt.Printf("latency: %d millisecond per fsync, %d ops\n", latency, ops)
+	ops := 1000000 / latency
+	fmt.Printf("latency: %d microsecond per fsync, %d ops\n", latency, ops)
 }
