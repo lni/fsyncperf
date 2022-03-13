@@ -9,7 +9,7 @@ import (
 
 const (
 	dataFilename = "fsync_perf_data.tmp"
-	iteration    = 100
+	iteration    = 10000
 )
 
 func main() {
