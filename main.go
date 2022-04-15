@@ -8,34 +8,89 @@ import (
 )
 
 const (
-	dataFilename = "fsync_perf_data.tmp"
-	iteration    = 10000
+	concurrency  = 8
+	dataFilename = "fsync_perf_data_%d.tmp"
+	blockSize    = 64 * 1024
+	iteration    = 20000
 )
 
-func main() {
-	f, err := os.Create(dataFilename)
+type result struct {
+	err       error
+	workerID  uint64
+	latency   int64
+	bandwidth int64
+}
+
+func writeFsyncTest(workerID uint64, ch chan result) {
+	fn := fmt.Sprintf(dataFilename, workerID)
+	f, err := os.Create(fn)
 	if err != nil {
-		panic(err)
+		ch <- result{err: err}
+		return
 	}
-	defer os.RemoveAll(dataFilename)
+	defer os.RemoveAll(fn)
 	defer f.Close()
 
-	buf := make([]byte, 1024*64)
+	buf := make([]byte, blockSize)
 	rand.Read(buf)
 
 	st := time.Now().UnixMicro()
 	for i := 0; i < iteration; i++ {
 		if _, err := f.Write(buf); err != nil {
-			panic(err)
+			ch <- result{err: err}
+			return
 		}
 		if err := f.Sync(); err != nil {
-			panic(err)
+			ch <- result{err: err}
+			return
 		}
 	}
 	total := time.Now().UnixMicro() - st
-	// yes, latency might be 0 here on a fast disk, you end up with a div by 0
-	// crash, good luck for that
-	latency := total / iteration
-	ops := 1000000 / latency
-	fmt.Printf("latency: %d microsecond per fsync, %d ops\n", latency, ops)
+
+	ch <- result{
+		workerID:  workerID,
+		latency:   total / iteration,
+		bandwidth: int64(blockSize*iteration) * 1000000 / (total * 1024 * 1024),
+	}
+}
+
+func print(results []result) {
+	fmt.Printf("concurrency: %d\n", len(results))
+	bandwidth := int64(0)
+	for _, rec := range results {
+		bandwidth += rec.bandwidth
+		fmt.Printf("workerID: %d, latency: %d microsecond per op, bandwidth: %dMBytes/sec\n",
+			rec.workerID, rec.latency, rec.bandwidth)
+	}
+	fmt.Printf("aggregated bandwidth: %dMBytes/sec\n", bandwidth)
+	fmt.Printf("\n")
+}
+
+func test(concurrency uint64) {
+	resultCh := make(chan result, concurrency)
+	for workerID := uint64(0); workerID < concurrency; workerID++ {
+		go writeFsyncTest(workerID, resultCh)
+	}
+
+	completed := uint64(0)
+	results := make([]result, 0)
+	for {
+		result := <-resultCh
+		if result.err != nil {
+			panic(result.err)
+		}
+		results = append(results, result)
+		completed++
+		if completed == concurrency {
+			print(results)
+			return
+		}
+	}
+}
+
+func main() {
+	test(1)
+	test(2)
+	test(4)
+	test(8)
 }
