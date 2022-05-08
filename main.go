@@ -21,7 +21,30 @@ type result struct {
 	bandwidth int64
 }
 
-func writeFsyncTest(workerID uint64, ch chan result) {
+func syncStart(workerID uint64, concurrency uint64, ch chan struct{}) {
+	return
+	if workerID == 0 {
+		for i := uint64(1); i < concurrency; i++ {
+			ch <- struct{}{}
+		}
+	} else {
+		<-ch
+	}
+}
+
+func syncEnd(workerID uint64, concurrency uint64, ch chan struct{}) {
+	return
+	if workerID == 0 {
+		for i := uint64(1); i < concurrency; i++ {
+			<-ch
+		}
+	} else {
+		ch <- struct{}{}
+	}
+}
+
+func writeFsyncTest(workerID uint64, ch chan result,
+	syncStartCh chan struct{}, syncEndCh chan struct{}, concurrency uint64) {
 	fn := fmt.Sprintf(dataFilename, workerID)
 	f, err := os.Create(fn)
 	if err != nil {
@@ -36,6 +59,7 @@ func writeFsyncTest(workerID uint64, ch chan result) {
 
 	st := time.Now().UnixMicro()
 	for i := 0; i < iteration; i++ {
+		syncStart(workerID, concurrency, syncStartCh)
 		if _, err := f.Write(buf); err != nil {
 			ch <- result{err: err}
 			return
@@ -44,6 +68,7 @@ func writeFsyncTest(workerID uint64, ch chan result) {
 			ch <- result{err: err}
 			return
 		}
+		syncStart(workerID, concurrency, syncEndCh)
 	}
 	total := time.Now().UnixMicro() - st
 
@@ -68,8 +93,10 @@ func print(results []result) {
 
 func test(concurrency uint64) {
 	resultCh := make(chan result, concurrency)
+	syncStartCh := make(chan struct{})
+	syncEndCh := make(chan struct{})
 	for workerID := uint64(0); workerID < concurrency; workerID++ {
-		go writeFsyncTest(workerID, resultCh)
+		go writeFsyncTest(workerID, resultCh, syncStartCh, syncEndCh, concurrency)
 	}
 
 	completed := uint64(0)
