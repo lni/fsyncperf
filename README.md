@@ -11,7 +11,38 @@ go build .
 
 ## Results
 
-Aliyun ecs.i4p.2xlarge's local SSD
+Aliyun ecs.i3.2xlarge's local SSD
+
+```
+concurrency: 1
+workerID: 0, latency: 182 microsecond per op, bandwidth: 342MBytes/sec
+aggregated bandwidth: 342MBytes/sec
+
+concurrency: 2
+workerID: 1, latency: 202 microsecond per op, bandwidth: 308MBytes/sec
+workerID: 0, latency: 202 microsecond per op, bandwidth: 308MBytes/sec
+aggregated bandwidth: 616MBytes/sec
+
+concurrency: 4
+workerID: 3, latency: 231 microsecond per op, bandwidth: 269MBytes/sec
+workerID: 1, latency: 231 microsecond per op, bandwidth: 269MBytes/sec
+workerID: 2, latency: 231 microsecond per op, bandwidth: 269MBytes/sec
+workerID: 0, latency: 231 microsecond per op, bandwidth: 269MBytes/sec
+aggregated bandwidth: 1076MBytes/sec
+
+concurrency: 8
+workerID: 3, latency: 335 microsecond per op, bandwidth: 186MBytes/sec
+workerID: 0, latency: 335 microsecond per op, bandwidth: 186MBytes/sec
+workerID: 4, latency: 335 microsecond per op, bandwidth: 186MBytes/sec
+workerID: 1, latency: 335 microsecond per op, bandwidth: 186MBytes/sec
+workerID: 5, latency: 336 microsecond per op, bandwidth: 185MBytes/sec
+workerID: 2, latency: 336 microsecond per op, bandwidth: 185MBytes/sec
+workerID: 6, latency: 336 microsecond per op, bandwidth: 185MBytes/sec
+workerID: 7, latency: 337 microsecond per op, bandwidth: 185MBytes/sec
+aggregated bandwidth: 1484MBytes/sec
+```
+
+Aliyun ecs.i4p.2xlarge's local SSD (NVRAM based)
 
 ```
 concurrency: 1
@@ -42,7 +73,7 @@ workerID: 7, latency: 320 microsecond per op, bandwidth: 194MBytes/sec
 aggregated bandwidth: 1560MBytes/sec
 ```
 
-Aliyun ecs.i4p.16xlarge's local SSD
+Aliyun ecs.i4p.16xlarge's local SSD (NVRAM based)
 
 ```
 concurrency: 1
