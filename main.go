@@ -45,7 +45,8 @@ func syncEnd(workerID uint64, concurrency uint64, ch chan struct{}) {
 
 func writeFsyncTest(workerID uint64, ch chan result,
 	syncStartCh chan struct{}, syncEndCh chan struct{}, concurrency uint64) {
-	fn := fmt.Sprintf(dataFilename, workerID)
+	path := os.Getenv("DEVICE" + dataFilename)
+	fn := fmt.Sprintf(path, workerID)
 	f, err := os.Create(fn)
 	if err != nil {
 		ch <- result{err: err}
