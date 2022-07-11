@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -44,9 +45,9 @@ func syncEnd(workerID uint64, concurrency uint64, ch chan struct{}) {
 }
 
 func writeFsyncTest(workerID uint64, ch chan result,
-	syncStartCh chan struct{}, syncEndCh chan struct{}, concurrency uint64) {
-	path := os.Getenv("DEVICE" + dataFilename)
-	fn := fmt.Sprintf(path, workerID)
+	syncStartCh chan struct{}, syncEndCh chan struct{}, concurrency uint64, path string) {
+	p := path + "/" + dataFilename
+	fn := fmt.Sprintf(p, workerID)
 	f, err := os.Create(fn)
 	if err != nil {
 		ch <- result{err: err}
@@ -92,12 +93,12 @@ func print(results []result) {
 	fmt.Printf("\n")
 }
 
-func test(concurrency uint64) {
+func test(concurrency uint64, path string) {
 	resultCh := make(chan result, concurrency)
 	syncStartCh := make(chan struct{})
 	syncEndCh := make(chan struct{})
 	for workerID := uint64(0); workerID < concurrency; workerID++ {
-		go writeFsyncTest(workerID, resultCh, syncStartCh, syncEndCh, concurrency)
+		go writeFsyncTest(workerID, resultCh, syncStartCh, syncEndCh, concurrency, path)
 	}
 
 	completed := uint64(0)
@@ -116,9 +117,29 @@ func test(concurrency uint64) {
 	}
 }
 
+type pathList []string
+
+func (p *pathList) String() string {
+	return "String representation"
+}
+
+func (p *pathList) Set(value string) error {
+	*p = append(*p, value)
+	return nil
+}
+
+var myPathList pathList
+
 func main() {
-	test(1)
-	test(2)
-	test(4)
-	test(8)
+	flag.Var(&myPathList, "path", "ebs device name list")
+	flag.Parse()
+
+	for _, v := range myPathList {
+		fmt.Printf("DeviceName: %s \n", v)
+		test(1, v)
+		test(2, v)
+		test(4, v)
+		test(8, v)
+	}
+
 }
