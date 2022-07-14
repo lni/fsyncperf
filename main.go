@@ -117,29 +117,13 @@ func test(concurrency uint64, path string) {
 	}
 }
 
-type pathList []string
-
-func (p *pathList) String() string {
-	return "String representation"
-}
-
-func (p *pathList) Set(value string) error {
-	*p = append(*p, value)
-	return nil
-}
-
-var myPathList pathList
-
 func main() {
-	flag.Var(&myPathList, "path", "ebs device name list")
+	path := flag.String("path", "path", "ebs device name list")
 	flag.Parse()
 
-	for _, v := range myPathList {
-		fmt.Printf("DeviceName: %s \n", v)
-		test(1, v)
-		test(2, v)
-		test(4, v)
-		test(8, v)
-	}
-
+	fmt.Printf("DeviceName: %s \n", *path)
+	test(1, *path)
+	test(2, *path)
+	test(4, *path)
+	test(8, *path)
 }
